@@ -139,7 +139,7 @@ Resources:
             UserPool: !Ref AspireUserPool
             Trigger: PostConfirmation
       Layers:
-        - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:max-aspire-database-${Env}-:${AspireDbLibVersion}'
+        - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:max-aspire-database-${Env}:${AspireDbLibVersion}'
       
 
 Outputs:

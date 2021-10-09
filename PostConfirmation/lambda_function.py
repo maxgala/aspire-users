@@ -45,11 +45,11 @@ def send_email(source_email, to_addresses, subject, body_text, body_html, charse
         logger.info(response['MessageId'])
 
 
-def sync_with_db(username, user_type, industry, first_name, last_name):
+def sync_with_db(username, user_type, industry, industry_tags, first_name, last_name, status):
 
     session = Session()
     user = User(username=username, user_type=user_type,
-                industry=industry, first_name=first_name, last_name=last_name)
+                industry=industry, first_name=first_name, last_name=last_name, industry_tags=industry_tags, status=status)
     session.add(user)
     session.commit()
     session.close()
@@ -67,6 +67,8 @@ def handler(event, context):
     user_lname = event['request']['userAttributes']['family_name']
     user_industry = event['request']['userAttributes'].get(
         'custom:industry', '')
+    user_industry_tags = event['request']['userAttributes'].get(
+        'custom:industry_tags', '')
 
     logger.info('confirming user {%s} with user_type {%s}' % (
         user_email, user_type))
@@ -79,8 +81,8 @@ def handler(event, context):
         )
         logger.info(response)
     elif user_type == 'FREE':
-        sync_with_db(user_email, user_type, user_industry,
-                     user_fname, user_lname)
+        sync_with_db(user_email, user_type, user_industry, user_industry_tags,
+                     user_fname, user_lname, 'ENABLED')
         BODY_TEXT = (f"Salaam {user_fname}!\r\n"
                      "\r\n\n"
                      "Congratulations for successfully signing up on MAX Aspire! We are thrilled to have you on board and can’t wait to make a positive difference in your professional career."
@@ -104,8 +106,8 @@ def handler(event, context):
         send_email(ADMIN_EMAIL, [user_email],
                    SUBJECT, BODY_TEXT, None, CHARSET)
     elif user_type == 'PAID':
-        sync_with_db(user_email, user_type, user_industry,
-                     user_fname, user_lname)
+        sync_with_db(user_email, user_type, user_industry, user_industry_tags,
+                     user_fname, user_lname, 'ENABLED')
         BODY_TEXT = (f"Salaam {user_fname}!\r\n"
                      "\r\n\n"
                      "Congratulations for successfully signing up on MAX Aspire! We are thrilled to have you on board and can’t wait to make a positive difference in your professional career."
@@ -136,8 +138,8 @@ def handler(event, context):
         )
         logger.info(response)
 
-        sync_with_db(user_email, user_type, user_industry,
-                     user_fname, user_lname)
+        sync_with_db(user_email, user_type, user_industry, user_industry_tags,
+                     user_fname, user_lname, 'DISABLED')
         BODY_TEXT = (f"Salaam {user_fname}!\r\n"
                      "\r\n\n"
                      "Thank you for signing up as a Senior Executive on MAX Aspire. "

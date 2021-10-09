@@ -2,6 +2,9 @@ import logging
 import boto3
 from botocore.exceptions import ClientError
 
+from user import User
+from base import Session
+
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -13,6 +16,7 @@ SUPPORT_EMAIL = "aspire@maxgala.com"
 
 CHARSET = "UTF-8"
 SUBJECT = "Welcome to MAX Aspire!"
+
 
 def send_email(source_email, to_addresses, subject, body_text, body_html, charset):
     try:
@@ -40,17 +44,34 @@ def send_email(source_email, to_addresses, subject, body_text, body_html, charse
         logger.info("Email sent! Message ID:"),
         logger.info(response['MessageId'])
 
+
+def sync_with_db(username, user_type, industry, industry_tags, first_name, last_name, status):
+
+    session = Session()
+    user = User(username=username, user_type=user_type,
+                industry=industry, first_name=first_name, last_name=last_name, industry_tags=industry_tags, status=status)
+    session.add(user)
+    session.commit()
+    session.close()
+
+
 def handler(event, context):
     logger.info(event)
     logger.info(context)
     if event['triggerSource'] == 'PostConfirmation_ConfirmForgotPassword':
         return event
 
-    user_type =  event['request']['userAttributes'].get('custom:user_type', '')
+    user_type = event['request']['userAttributes'].get('custom:user_type', '')
     user_email = event['request']['userAttributes']['email']
-    user_name = event['request']['userAttributes']['given_name']
+    user_fname = event['request']['userAttributes']['given_name']
+    user_lname = event['request']['userAttributes']['family_name']
+    user_industry = event['request']['userAttributes'].get(
+        'custom:industry', '')
+    user_industry_tags = event['request']['userAttributes'].get(
+        'custom:industry_tags', '')
 
-    logger.info('confirming user {%s} with user_type {%s}' % (user_email, user_type))
+    logger.info('confirming user {%s} with user_type {%s}' % (
+        user_email, user_type))
     if user_type == 'ADMIN':
         # TODO: send email
         logger.info('disabling user of type {%s}' % (user_type))
@@ -60,7 +81,9 @@ def handler(event, context):
         )
         logger.info(response)
     elif user_type == 'FREE':
-        BODY_TEXT = (f"Salaam {user_name}!\r\n"
+        sync_with_db(user_email, user_type, user_industry, user_industry_tags,
+                     user_fname, user_lname, 'ENABLED')
+        BODY_TEXT = (f"Salaam {user_fname}!\r\n"
                      "\r\n\n"
                      "Congratulations for successfully signing up on MAX Aspire! We are thrilled to have you on board and can’t wait to make a positive difference in your professional career."
                      "At MAX, we are devoted to elevating the Muslim brand by serving aspiring professionals, such as yourself! The Aspire platform aims to bring together a powerful network to collaborate for a more rewarding career journey and help Muslims fulfill their true potential. More than 200 Senior Executives, including CEOs, Partners, Managing Directors and VPs, are already on board! You are now a part of this circle too!\r\n"
@@ -79,10 +102,13 @@ def handler(event, context):
                      "Aazar Zafar\r\n"
                      "Founder and Head Cheerleader\r\n"
                      "MAX Aspire"
-                    )
-        send_email(ADMIN_EMAIL, [user_email], SUBJECT, BODY_TEXT, None, CHARSET)
+                     )
+        send_email(ADMIN_EMAIL, [user_email],
+                   SUBJECT, BODY_TEXT, None, CHARSET)
     elif user_type == 'PAID':
-        BODY_TEXT = (f"Salaam {user_name}!\r\n"
+        sync_with_db(user_email, user_type, user_industry, user_industry_tags,
+                     user_fname, user_lname, 'ENABLED')
+        BODY_TEXT = (f"Salaam {user_fname}!\r\n"
                      "\r\n\n"
                      "Congratulations for successfully signing up on MAX Aspire! We are thrilled to have you on board and can’t wait to make a positive difference in your professional career."
                      "At MAX, we are devoted to elevating the Muslim brand by serving aspiring professionals, such as yourself! The Aspire platform aims to bring together a powerful network to collaborate for a more rewarding career journey and help Muslims fulfill their true potential. More than 200 Senior Executives, including CEOs, Partners, Managing Directors and VPs, are already on board! You are now a part of this circle too!\r\n"
@@ -101,8 +127,9 @@ def handler(event, context):
                      "Aazar Zafar\r\n"
                      "Founder and Head Cheerleader\r\n"
                      "MAX Aspire"
-                    )
-        send_email(ADMIN_EMAIL, [user_email], SUBJECT, BODY_TEXT, None, CHARSET)
+                     )
+        send_email(ADMIN_EMAIL, [user_email],
+                   SUBJECT, BODY_TEXT, None, CHARSET)
     elif user_type == 'MENTOR':
         logger.info('disabling user of type {%s}' % (user_type))
         response = cognito_client.admin_disable_user(
@@ -111,7 +138,9 @@ def handler(event, context):
         )
         logger.info(response)
 
-        BODY_TEXT = (f"Salaam {user_name}!\r\n"
+        sync_with_db(user_email, user_type, user_industry, user_industry_tags,
+                     user_fname, user_lname, 'DISABLED')
+        BODY_TEXT = (f"Salaam {user_fname}!\r\n"
                      "\r\n\n"
                      "Thank you for signing up as a Senior Executive on MAX Aspire. "
                      "Our team is working on your request and will send over an update within 48 to 72 hours.\r\n"
@@ -120,11 +149,12 @@ def handler(event, context):
                      "\r\n\n"
                      "Best,\r\n"
                      "MAX Aspire Team"
-                    )
-        send_email(ADMIN_EMAIL, [user_email], SUBJECT, BODY_TEXT, None, CHARSET)
+                     )
+        send_email(ADMIN_EMAIL, [user_email],
+                   SUBJECT, BODY_TEXT, None, CHARSET)
     else:
-        # TODO: raise error (do not allow sign up)
-        logger.info('invalid user_type: disabling user of type {%s}' % (user_type))
+        logger.error(
+            'invalid user_type: disabling user of type {%s}' % (user_type))
         response = cognito_client.admin_disable_user(
             UserPoolId=event['userPoolId'],
             Username=event['userName']

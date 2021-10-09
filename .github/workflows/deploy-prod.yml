@@ -19,9 +19,9 @@ jobs:
         uses: poketapp/gh-action-aws-sam@v2
         env:
           TEMPLATE: 'template.yaml'
-          AWS_STACK_NAME: Aspire-Cognito-Dev
+          AWS_STACK_NAME: Aspire-Cognito-Prod
           AWS_REGION: 'us-east-1'
           AWS_ACCESS_KEY_ID: ${{secrets.ASPIRE_AWS_ACCESS_KEY_ID}}
           AWS_SECRET_ACCESS_KEY: ${{secrets.ASPIRE_AWS_SECRET_ACCESS_KEY}}
           AWS_DEPLOY_BUCKET: aspire-sam-deployment
-          AWS_PARAMETER_OVERRIDES: 'CognitoUserPoolName=Aspire-Dev'
+          AWS_PARAMETER_OVERRIDES: 'CognitoUserPoolName=Aspire-Prod Env=prod AspireDbLibVersion=94'

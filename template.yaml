@@ -9,6 +9,13 @@ Parameters:
   CognitoUserPoolName:
     Type: String
     Default: 'Aspire-Dev'
+  Env:
+    Type: String
+    Default: "dev"
+    AllowedValues : ["dev", "prod"]
+  AspireDbLibVersion:
+    Type: Number
+    Default: 1
 
 Globals:
   Function:
@@ -131,6 +138,9 @@ Resources:
           Properties:
             UserPool: !Ref AspireUserPool
             Trigger: PostConfirmation
+      Layers:
+        - !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:layer:max-aspire-database-${Env}:${AspireDbLibVersion}'
+      
 
 Outputs:
   AspireUserPoolId:

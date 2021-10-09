@@ -1,0 +1,27 @@
+name: CD
+
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.ASPIRE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.ASPIRE_AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: 'Deploy'
+        uses: poketapp/gh-action-aws-sam@v2
+        env:
+          TEMPLATE: 'template.yaml'
+          AWS_STACK_NAME: Aspire-Cognito-Dev
+          AWS_REGION: 'us-east-1'
+          AWS_ACCESS_KEY_ID: ${{secrets.ASPIRE_AWS_ACCESS_KEY_ID}}
+          AWS_SECRET_ACCESS_KEY: ${{secrets.ASPIRE_AWS_SECRET_ACCESS_KEY}}
+          AWS_DEPLOY_BUCKET: aspire-sam-deployment
+          AWS_PARAMETER_OVERRIDES: 'CognitoUserPoolName=Aspire-Dev Env=dev AspireDbLibVersion=173'

@@ -66,7 +66,7 @@ def handler(event, context):
     user_fname = event['request']['userAttributes']['given_name']
     user_lname = event['request']['userAttributes']['family_name']
     user_industry = event['request']['userAttributes'].get(
-        'custom:industry_tags', '')
+        'custom:industry', '')
 
     logger.info('confirming user {%s} with user_type {%s}' % (
         user_email, user_type))
